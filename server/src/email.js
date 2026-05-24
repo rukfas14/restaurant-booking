@@ -39,13 +39,44 @@ function logFallback(label, payload) {
   console.log(JSON.stringify(payload, null, 2));
 }
 
+function logEnvSummary() {
+  console.log('[email] SMTP env summary:', {
+    host: process.env.SMTP_HOST || null,
+    port: process.env.SMTP_PORT || null,
+    user: process.env.SMTP_USER || null,
+    pass_set: Boolean(process.env.SMTP_PASS),
+    from: process.env.SMTP_FROM || null,
+    admin: process.env.ADMIN_EMAIL || null,
+  });
+}
+
 async function send({ to, subject, text, html }) {
   const tx = transporter();
   if (!tx) {
     logFallback('skip', { to, subject, text });
     return { skipped: true };
   }
-  return tx.sendMail({ from: fromAddress(), to, subject, text, html });
+  const from = fromAddress();
+  console.log(`[email] -> ${to}  subject="${subject}"  from="${from}"`);
+  try {
+    const info = await tx.sendMail({ from, to, subject, text, html });
+    console.log(`[email] OK   messageId=${info.messageId}  response="${info.response}"  accepted=${JSON.stringify(info.accepted)}  rejected=${JSON.stringify(info.rejected)}`);
+    return info;
+  } catch (e) {
+    // Nodemailer attaches a lot more than e.message — log everything useful.
+    console.error('[email] FAIL', {
+      to,
+      subject,
+      message: e.message,
+      code: e.code,            // e.g. 'EAUTH', 'EENVELOPE', 'ESOCKET', 'ETIMEDOUT'
+      command: e.command,      // SMTP command that failed (e.g. 'API', 'AUTH PLAIN')
+      response: e.response,    // server response (often the real reason)
+      responseCode: e.responseCode,
+      errno: e.errno,
+      syscall: e.syscall,
+    });
+    throw e; // let the caller decide whether to swallow
+  }
 }
 
 function htmlShell(title, bodyInner) {
@@ -170,16 +201,26 @@ async function sendAdminNotification({ booking, restaurant }) {
   });
 }
 
+function logSendError(label, e) {
+  console.error(`[email] ${label} FAILED`, {
+    message: e.message,
+    code: e.code,
+    command: e.command,
+    response: e.response,
+    responseCode: e.responseCode,
+  });
+}
+
 async function sendBookingEmails({ booking, restaurant }) {
   try {
     await sendGuestConfirmation({ booking, restaurant });
   } catch (e) {
-    console.error('[email] guest confirmation failed:', e.message);
+    logSendError('guest confirmation', e);
   }
   try {
     await sendAdminNotification({ booking, restaurant });
   } catch (e) {
-    console.error('[email] admin notification failed:', e.message);
+    logSendError('admin notification', e);
   }
 }
 
@@ -199,6 +240,7 @@ async function sendTestEmail() {
 
 module.exports = {
   envConfigured,
+  logEnvSummary,
   sendGuestConfirmation,
   sendAdminNotification,
   sendBookingEmails,

@@ -10,6 +10,7 @@ const {
   sendBookingEmails,
   sendTestEmail,
   envConfigured,
+  logEnvSummary,
 } = require('./email');
 
 // --- bootstrap: auto-seed on first boot ---
@@ -195,15 +196,48 @@ app.patch('/api/bookings/:id', requireAuth, (req, res) => {
   res.json(db.prepare('SELECT * FROM bookings WHERE id = ?').get(id));
 });
 
-// --- authed: SMTP test ----------------------------------------------------
-app.post('/api/test-email', requireAuth, async (_req, res) => {
+// --- public: SMTP test ----------------------------------------------------
+// Public so it can be hit from a browser / curl on Railway to diagnose
+// "emails not arriving" without needing a JWT. Returns full diagnostic info
+// (env presence + nodemailer error code/command/response if it fails).
+async function handleTestEmail(_req, res) {
+  const diagnostics = {
+    smtp_configured: envConfigured(),
+    env: {
+      SMTP_HOST: process.env.SMTP_HOST || null,
+      SMTP_PORT: process.env.SMTP_PORT || null,
+      SMTP_USER: process.env.SMTP_USER || null,
+      SMTP_PASS_set: Boolean(process.env.SMTP_PASS),
+      SMTP_FROM: process.env.SMTP_FROM || null,
+      ADMIN_EMAIL: process.env.ADMIN_EMAIL || null,
+    },
+  };
   try {
     const r = await sendTestEmail();
-    res.json({ ok: true, smtp: envConfigured(), result: r });
+    return res.json({ ok: true, ...diagnostics, result: r });
   } catch (e) {
-    res.status(500).json({ ok: false, error: e.message });
+    console.error('[email:test] FAILED', {
+      message: e.message,
+      code: e.code,
+      command: e.command,
+      response: e.response,
+      responseCode: e.responseCode,
+    });
+    return res.status(500).json({
+      ok: false,
+      ...diagnostics,
+      error: {
+        message: e.message,
+        code: e.code,
+        command: e.command,
+        response: e.response,
+        responseCode: e.responseCode,
+      },
+    });
   }
-});
+}
+app.get('/api/test-email', handleTestEmail);
+app.post('/api/test-email', handleTestEmail);
 
 // --- static: widget + demo ------------------------------------------------
 // These live inside server/ so the server is self-contained for deploy
@@ -225,4 +259,5 @@ const PORT = process.env.PORT || 4000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Booking API on http://0.0.0.0:${PORT}`);
   console.log(`  SMTP configured: ${envConfigured() ? 'yes' : 'no (falling back to console)'}`);
+  logEnvSummary();
 });
