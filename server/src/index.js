@@ -12,15 +12,31 @@ const {
   envConfigured,
 } = require('./email');
 
+// --- bootstrap: auto-seed on first boot ---
+// On a fresh deploy (e.g. Railway with a brand-new volume) the DB is empty.
+// Seed it once so the widget and dashboard have data without a manual step.
+try {
+  const restCount = db.prepare('SELECT COUNT(*) AS n FROM restaurants').get().n;
+  if (restCount === 0) {
+    console.log('[bootstrap] DB is empty — running initial seed…');
+    require('./seed').main();
+  }
+} catch (e) {
+  console.error('[bootstrap] auto-seed failed:', e.message);
+}
+
 const app = express();
 
-// --- CORS: CLIENT_ORIGIN env (comma-separated) + http://localhost:8080 always allowed in dev.
+// --- CORS ---
+//
+// CLIENT_ORIGIN env can be a comma-separated allowlist, "*", or unset.
+//   - Unset / "*"  →  allow ALL origins (public booking widget should embed anywhere)
+//   - Otherwise    →  strict allowlist + localhost dev origins
+const rawClientOrigin = String(process.env.CLIENT_ORIGIN || '').trim();
+const allowAll = rawClientOrigin === '' || rawClientOrigin === '*';
 const allowList = new Set(
   [
-    ...String(process.env.CLIENT_ORIGIN || '')
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean),
+    ...rawClientOrigin.split(',').map((s) => s.trim()).filter(Boolean).filter((s) => s !== '*'),
     'http://localhost:8080',
     'http://localhost:5173',
   ],
@@ -30,7 +46,8 @@ app.use(
   cors({
     origin(origin, cb) {
       if (!origin) return cb(null, true); // curl, same-origin, server-to-server
-      if (allowList.has('*') || allowList.has(origin)) return cb(null, true);
+      if (allowAll) return cb(null, true);
+      if (allowList.has(origin)) return cb(null, true);
       return cb(new Error(`CORS: origin not allowed: ${origin}`));
     },
   }),
@@ -189,9 +206,11 @@ app.post('/api/test-email', requireAuth, async (_req, res) => {
 });
 
 // --- static: widget + demo ------------------------------------------------
-const repoRoot = path.join(__dirname, '..', '..');
-app.use('/widget', express.static(path.join(repoRoot, 'widget')));
-app.use('/demo', express.static(path.join(repoRoot, 'demo')));
+// These live inside server/ so the server is self-contained for deploy
+// (Railway uses server/ as its Root Directory).
+const serverRoot = path.join(__dirname, '..');
+app.use('/widget', express.static(path.join(serverRoot, 'widget')));
+app.use('/demo', express.static(path.join(serverRoot, 'demo')));
 
 // --- error handler --------------------------------------------------------
 app.use((err, _req, res, _next) => {

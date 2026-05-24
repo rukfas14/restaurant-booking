@@ -109,7 +109,6 @@ export const translations = {
       en: "Real-time availability with instant email confirmation — no waiting.",
     },
     ctaPrimary: { bs: "Rezerviši sto", en: "Reserve a table" },
-    ctaWhatsapp: { bs: "Ili poruči putem WhatsApp-a", en: "Or message us on WhatsApp" },
   },
   menuPage: {
     title: { bs: "Naš Meni", en: "Our Menu" },

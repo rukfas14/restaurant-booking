@@ -1,9 +1,7 @@
-import { CalendarCheck2, MessageCircle, Clock, ShieldCheck } from "lucide-react";
+import { CalendarCheck2, Clock, ShieldCheck } from "lucide-react";
 import { useLang } from "@/i18n/LanguageContext";
 import { translations as tr } from "@/i18n/translations";
 import { openBookingWidget } from "@/lib/booking";
-
-const WHATSAPP = "38762001144";
 
 const Reservation = () => {
   const { lang } = useLang();
@@ -76,7 +74,7 @@ const Reservation = () => {
           ))}
         </div>
 
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <div className="flex items-center justify-center">
           <button
             type="button"
             onClick={openBookingWidget}
@@ -85,15 +83,6 @@ const Reservation = () => {
             <CalendarCheck2 className="w-4 h-4" />
             {t.ctaPrimary[lang]}
           </button>
-          <a
-            href={`https://wa.me/${WHATSAPP}`}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-2 px-6 py-3 font-body text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <MessageCircle className="w-4 h-4" />
-            {t.ctaWhatsapp[lang]}
-          </a>
         </div>
       </div>
     </section>
