@@ -12,8 +12,8 @@ dist
 dist-ssr
 *.local
 
-# Local reservation data (created at runtime)
-data/
+# Local reservation data (created at runtime — root-level only, not src/data!)
+/data/
 
 # Editor directories and files
 .vscode/*
