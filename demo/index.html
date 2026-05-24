@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="bs">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Restoran Stari Grad — Demo</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        color: #2b1d16;
+        background: #fbf7f3;
+        line-height: 1.5;
+      }
+      .hero {
+        background: linear-gradient(135deg, #2b1d16 0%, #4a2e1f 100%);
+        color: #fbf7f3;
+        padding: 90px 24px 110px;
+        text-align: center;
+      }
+      .hero h1 { font-size: 52px; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.02em; }
+      .hero p { font-size: 19px; opacity: 0.85; max-width: 540px; margin: 0 auto 36px; }
+      .hero-actions { display: inline-flex; gap: 12px; }
+      .container { max-width: 980px; margin: -60px auto 0; padding: 0 24px 80px; }
+      .card {
+        background: #fff;
+        border-radius: 16px;
+        padding: 40px;
+        box-shadow: 0 20px 60px rgba(43, 29, 22, 0.08);
+        margin-bottom: 24px;
+      }
+      .card h2 { font-size: 26px; margin-bottom: 12px; }
+      .card p { color: #5e4636; margin-bottom: 8px; }
+      .menu-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 20px;
+        margin-top: 22px;
+      }
+      .menu-item {
+        padding: 18px;
+        background: #fbf7f3;
+        border-radius: 12px;
+      }
+      .menu-item h4 { font-size: 16px; margin-bottom: 4px; }
+      .menu-item .price { color: #b54a30; font-weight: 700; margin-top: 6px; }
+      .info-bar {
+        display: flex; flex-wrap: wrap; gap: 24px;
+        padding: 18px 0; border-top: 1px solid #e7ddd2;
+        margin-top: 22px; font-size: 14px; color: #7a5e4d;
+      }
+      footer {
+        text-align: center; padding: 24px;
+        color: #7a5e4d; font-size: 13px;
+      }
+      .embedded-cta { margin-top: 18px; }
+    </style>
+  </head>
+  <body>
+    <section class="hero">
+      <h1>Restoran Stari Grad</h1>
+      <p>Autentična bosanska kuhinja u srcu Sarajeva. Rezervišite stol i uživajte u tradicionalnim jelima pripremljenim s pažnjom.</p>
+
+      <!-- Widget script — button appears right here -->
+      <script src="/widget/widget.js" data-restaurant-id="1" data-api=""></script>
+    </section>
+
+    <main class="container">
+      <div class="card">
+        <h2>O nama</h2>
+        <p>Smješteni u srcu Baščaršije, posvećeni smo tradicionalnoj bosanskoj kuhinji uz savremen pristup. Naš tim koristi lokalne sastojke i recepte koji se prenose generacijama.</p>
+        <div class="info-bar">
+          <span>📍 Baščaršija 12, Sarajevo</span>
+          <span>📞 +387 33 555 000</span>
+          <span>🕐 Pon — Ned, 12:00 — 23:00</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Naš meni</h2>
+        <div class="menu-grid">
+          <div class="menu-item">
+            <h4>Bosanski ćevap</h4>
+            <p>10 komada, somun, kajmak, luk</p>
+            <div class="price">14 KM</div>
+          </div>
+          <div class="menu-item">
+            <h4>Begova čorba</h4>
+            <p>Tradicionalna pileća čorba s povrćem</p>
+            <div class="price">8 KM</div>
+          </div>
+          <div class="menu-item">
+            <h4>Japrak</h4>
+            <p>Sarmice u listu vinove loze</p>
+            <div class="price">16 KM</div>
+          </div>
+          <div class="menu-item">
+            <h4>Baklava</h4>
+            <p>Domaća, s orahom i medom</p>
+            <div class="price">6 KM</div>
+          </div>
+        </div>
+
+        <div class="embedded-cta">
+          <p style="margin-bottom: 8px;">Spremni za posjetu?</p>
+          <!-- Second placement of the widget script — second button -->
+          <script src="/widget/widget.js" data-restaurant-id="1" data-api="" data-label="Rezerviši odmah"></script>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      © 2026 Restoran Stari Grad · Embeddable booking widget demo
+    </footer>
+  </body>
+</html>

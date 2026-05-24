@@ -1,0 +1,26 @@
+{
+  "name": "restaurant-booking-server",
+  "version": "1.0.0",
+  "description": "Restaurant booking API — Express + SQLite + Nodemailer + JWT.",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "seed": "node src/seed.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^12.10.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "jsonwebtoken": "^9.0.2",
+    "nodemailer": "^6.9.16"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.7"
+  },
+  "trustedDependencies": [
+    "better-sqlite3"
+  ]
+}

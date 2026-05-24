@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "vite-dev",
+      "runtimeExecutable": "bun",
+      "runtimeArgs": ["run", "dev"],
+      "port": 8080
+    },
+    {
+      "name": "api-server",
+      "runtimeExecutable": "bun",
+      "runtimeArgs": ["run", "server"],
+      "port": 3001
+    },
+    {
+      "name": "vite-preview",
+      "runtimeExecutable": "bun",
+      "runtimeArgs": ["run", "preview"],
+      "port": 4173
+    }
+  ]
+}

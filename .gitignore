@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+website/dist/
+client/dist/
+
+# Environment
+.env
+.env.local
+*.env
+!*.env.example
+
+# Local SQLite + runtime data
+server/data/
+website/data/
+
+# OS / editor
+.DS_Store
+.cache/
+coverage/
+*.log

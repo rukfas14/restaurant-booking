@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "booking-api",
+      "runtimeExecutable": "bun",
+      "runtimeArgs": ["run", "server/src/index.js"],
+      "port": 4000
+    }
+  ]
+}

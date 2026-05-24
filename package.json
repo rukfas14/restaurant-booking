@@ -1,0 +1,17 @@
+{
+  "name": "restaurant-booking-system",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Complete restaurant booking system: API server + staff dashboard + customer website with embeddable widget.",
+  "scripts": {
+    "install:all": "cd server && bun install && cd ../client && bun install && cd ../website && bun install",
+    "start:server": "cd server && bun run src/index.js",
+    "start:dashboard": "cd client && bun run dev",
+    "start:website": "cd website && bun run dev",
+    "start:all": "concurrently -n server,dashboard,website -c blue,magenta,green \"bun run start:server\" \"bun run start:dashboard\" \"bun run start:website\"",
+    "build:website": "cd website && bun run build"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
