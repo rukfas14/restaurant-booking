@@ -95,15 +95,13 @@
     <script type="module" src="/src/main.tsx"></script>
 
     <!-- Booking widget — exposes window.RestaurantBooking.open(). -->
-    <!-- Replace BOOKING_API_URL with the deployed API origin (e.g. https://margherita-api.up.railway.app). -->
-    <!-- Locally: http://localhost:4000 -->
+    <!-- API origin is hard-coded below. For local dev, point it at http://localhost:4000. -->
     <style>
       /* Hide the widget's auto-injected trigger button — we use our own in the navbar/CTA. */
       [data-restaurant-booking-trigger] { display: none !important; }
     </style>
     <script
       async
-      type="module"
       src="https://restaurant-booking-production-e5ce.up.railway.app/widget/widget.js"
       data-restaurant-id="1"
     ></script>
