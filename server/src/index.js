@@ -202,8 +202,8 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ error: 'internal_error' });
 });
 
-const PORT = Number(process.env.PORT || 4000);
-app.listen(PORT, () => {
-  console.log(`Booking API on http://localhost:${PORT}`);
+const PORT = process.env.PORT || 4000;
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Booking API on http://0.0.0.0:${PORT}`);
   console.log(`  SMTP configured: ${envConfigured() ? 'yes' : 'no (falling back to console)'}`);
 });
