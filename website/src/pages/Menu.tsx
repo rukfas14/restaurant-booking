@@ -3,7 +3,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useLang } from "@/i18n/LanguageContext";
 import { translations as t } from "@/i18n/translations";
-import { menuData, type MenuCategory } from "@/data/menuData";
+import { menuData, type MenuCategory } from "../data/menuData.ts" ;
 
 const Menu = () => {
   const [activeCategory, setActiveCategory] = useState(menuData[0].id);
