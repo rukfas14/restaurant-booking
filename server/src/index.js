@@ -196,20 +196,17 @@ app.patch('/api/bookings/:id', requireAuth, (req, res) => {
   res.json(db.prepare('SELECT * FROM bookings WHERE id = ?').get(id));
 });
 
-// --- public: SMTP test ----------------------------------------------------
+// --- public: email test ---------------------------------------------------
 // Public so it can be hit from a browser / curl on Railway to diagnose
-// "emails not arriving" without needing a JWT. Returns full diagnostic info
-// (env presence + nodemailer error code/command/response if it fails).
+// "emails not arriving" without needing a JWT. Returns full diagnostic info.
 async function handleTestEmail(_req, res) {
   const diagnostics = {
-    smtp_configured: envConfigured(),
+    email_configured: envConfigured(),
     env: {
-      SMTP_HOST: process.env.SMTP_HOST || null,
-      SMTP_PORT: process.env.SMTP_PORT || null,
-      SMTP_USER: process.env.SMTP_USER || null,
-      SMTP_PASS_set: Boolean(process.env.SMTP_PASS),
-      SMTP_FROM: process.env.SMTP_FROM || null,
+      RESEND_API_KEY_set: Boolean(process.env.RESEND_API_KEY),
+      RESEND_FROM: process.env.RESEND_FROM || 'Booking <onboarding@resend.dev>',
       ADMIN_EMAIL: process.env.ADMIN_EMAIL || null,
+      RESTAURANT_NAME: process.env.RESTAURANT_NAME || null,
     },
   };
   try {
@@ -219,9 +216,8 @@ async function handleTestEmail(_req, res) {
     console.error('[email:test] FAILED', {
       message: e.message,
       code: e.code,
-      command: e.command,
-      response: e.response,
-      responseCode: e.responseCode,
+      name: e.name,
+      statusCode: e.statusCode,
     });
     return res.status(500).json({
       ok: false,
@@ -229,9 +225,8 @@ async function handleTestEmail(_req, res) {
       error: {
         message: e.message,
         code: e.code,
-        command: e.command,
-        response: e.response,
-        responseCode: e.responseCode,
+        name: e.name,
+        statusCode: e.statusCode,
       },
     });
   }
@@ -258,6 +253,6 @@ app.use((err, _req, res, _next) => {
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Booking API on http://0.0.0.0:${PORT}`);
-  console.log(`  SMTP configured: ${envConfigured() ? 'yes' : 'no (falling back to console)'}`);
+  console.log(`  Email (Resend) configured: ${envConfigured() ? 'yes' : 'no (sends will be skipped + logged)'}`);
   logEnvSummary();
 });
