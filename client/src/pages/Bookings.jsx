@@ -199,12 +199,14 @@ export default function Bookings() {
                       <div className="text-warm-900/60">{b.time}</div>
                     </td>
                     <td className="px-4 py-3 font-medium text-warm-900">
-                      {b.name}
+                      {b.guest_name}
                     </td>
                     <td className="px-4 py-3 text-warm-900/80">
-                      <div>{b.phone}</div>
-                      {b.email && (
-                        <div className="text-xs text-warm-900/50">{b.email}</div>
+                      <div>{b.guest_phone}</div>
+                      {b.guest_email && (
+                        <div className="text-xs text-warm-900/50">
+                          {b.guest_email}
+                        </div>
                       )}
                     </td>
                     <td className="px-4 py-3 text-center font-medium">
