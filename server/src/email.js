@@ -22,6 +22,21 @@ function client() {
 
 const DEFAULT_FROM = process.env.RESEND_FROM || 'Booking <onboarding@resend.dev>';
 
+// SANDBOX MODE
+// Resend's sandbox sender (onboarding@resend.dev) can only deliver to
+// addresses verified on your Resend account. Until a real domain is
+// verified, route EVERY outgoing email to RESEND_TEST_EMAIL so they
+// actually reach the inbox during the demo phase.
+const SANDBOX_RECIPIENT =
+  process.env.RESEND_TEST_EMAIL || 'rukfas14@icloud.com';
+
+function sandboxRecipient(_intendedRecipient) {
+  // _intendedRecipient is the address we'd send to in production.
+  // For now everything goes to the sandbox inbox. Returned as a single
+  // string so we always send one copy per send.
+  return SANDBOX_RECIPIENT;
+}
+
 function envConfigured() {
   return Boolean(process.env.RESEND_API_KEY);
 }
@@ -30,6 +45,7 @@ function logEnvSummary() {
   console.log('[email] Resend env summary:', {
     api_key_set: Boolean(process.env.RESEND_API_KEY),
     from: DEFAULT_FROM,
+    sandbox_recipient: SANDBOX_RECIPIENT,
     admin: process.env.ADMIN_EMAIL || null,
     restaurant_name: process.env.RESTAURANT_NAME || null,
   });
@@ -87,6 +103,58 @@ function guestHtml(booking, restaurant) {
   `;
 }
 
+function receivedHtml(booking, restaurant) {
+  // Sent immediately after the guest submits. Status is still pending —
+  // copy reflects that the booking is awaiting staff confirmation.
+  return `
+    <div style="font-family:sans-serif;max-width:520px;margin:0 auto;color:#2b1d16">
+      <h2 style="color:#8B3A2A;margin:0 0 6px 0">Hvala, ${booking.guest_name}!</h2>
+      <p style="margin:0 0 16px 0;color:#5e4636">
+        Vaša rezervacija je primljena i čeka potvrdu osoblja.
+      </p>
+      <div style="background:#fdf3ea;border:1px solid #ead9c8;padding:18px 22px;border-radius:10px;margin:0 0 20px 0">
+        <p style="margin:6px 0"><strong>Datum:</strong> ${booking.date}</p>
+        <p style="margin:6px 0"><strong>Vrijeme:</strong> ${booking.time}</p>
+        <p style="margin:6px 0"><strong>Broj gostiju:</strong> ${booking.guests}</p>
+      </div>
+      <p style="margin:0 0 16px 0;color:#5e4636">
+        Dobit ćete email potvrdu čim osoblje potvrdi vašu rezervaciju.
+      </p>
+      <p style="margin:0;color:#8B3A2A;font-weight:600">
+        ${restaurant.name || 'Restoran'} tim
+      </p>
+    </div>
+  `;
+}
+
+function confirmedHtml(booking, restaurant) {
+  // Sent when staff flips the booking to "confirmed" in the dashboard.
+  // Green accent — celebratory.
+  const phone = restaurant.phone || process.env.RESTAURANT_PHONE || '';
+  return `
+    <div style="font-family:sans-serif;max-width:520px;margin:0 auto;color:#1e3a23">
+      <h2 style="color:#2e7d32;margin:0 0 6px 0">Odlično, ${booking.guest_name}!</h2>
+      <p style="margin:0 0 16px 0;color:#3b5a44">
+        Vaša rezervacija je potvrđena. ✓
+      </p>
+      <div style="background:#eaf6ec;border:1px solid #c4e3c9;padding:18px 22px;border-radius:10px;margin:0 0 20px 0">
+        <p style="margin:6px 0"><strong>Datum:</strong> ${booking.date}</p>
+        <p style="margin:6px 0"><strong>Vrijeme:</strong> ${booking.time}</p>
+        <p style="margin:6px 0"><strong>Broj gostiju:</strong> ${booking.guests}</p>
+      </div>
+      <p style="margin:0 0 8px 0;color:#3b5a44">Radujemo se vašem dolasku!</p>
+      ${
+        phone
+          ? `<p style="margin:0 0 16px 0;color:#3b5a44">Za pitanja: <a href="tel:${phone}" style="color:#2e7d32;text-decoration:none;font-weight:600">${phone}</a></p>`
+          : ''
+      }
+      <p style="margin:0;color:#2e7d32;font-weight:600">
+        ${restaurant.name || 'Restoran'} tim
+      </p>
+    </div>
+  `;
+}
+
 function adminHtml(booking, _restaurant) {
   return `
     <div style="font-family:sans-serif;max-width:500px;margin:0 auto">
@@ -107,13 +175,15 @@ function adminHtml(booking, _restaurant) {
 // ----- Per-recipient sends -----------------------------------------------
 
 async function sendGuestConfirmation({ booking, restaurant }) {
+  // Kept for backwards compatibility (was called by the legacy POST /api/bookings
+  // path). The new flow uses sendBookingReceivedEmail instead.
   if (!booking.guest_email) {
     console.log('[email] guest has no email — skipping confirmation');
     return { skipped: 'no_email' };
   }
   try {
     return await _send({
-      to: booking.guest_email,
+      to: sandboxRecipient(booking.guest_email),
       subject: `Potvrda rezervacije – ${restaurant.name || 'Restoran'}`,
       html: guestHtml(booking, restaurant),
       label: 'guest confirmation',
@@ -132,7 +202,7 @@ async function sendAdminNotification({ booking, restaurant }) {
   }
   try {
     return await _send({
-      to: adminTo,
+      to: sandboxRecipient(adminTo),
       subject: `Nova rezervacija – ${booking.guest_name}, ${booking.date} u ${booking.time}`,
       html: adminHtml(booking, restaurant),
       label: 'admin notification',
@@ -143,9 +213,42 @@ async function sendAdminNotification({ booking, restaurant }) {
   }
 }
 
-// Fire-and-forget wrapper: never throws, only logs.
+// --- New flows -----------------------------------------------------------
+
+// Sent immediately after POST /api/bookings: "we got it, awaiting confirmation".
+async function sendBookingReceivedEmail({ booking, restaurant }) {
+  try {
+    return await _send({
+      to: sandboxRecipient(booking.guest_email),
+      subject: `Rezervacija primljena – ${restaurant.name || 'Restoran'}`,
+      html: receivedHtml(booking, restaurant),
+      label: 'booking received',
+    });
+  } catch (e) {
+    logFail('booking received', e);
+    throw e;
+  }
+}
+
+// Sent from PATCH /api/bookings/:id when status transitions to 'confirmed'.
+async function sendBookingConfirmedEmail({ booking, restaurant }) {
+  try {
+    return await _send({
+      to: sandboxRecipient(booking.guest_email),
+      subject: `Rezervacija potvrđena ✓ – ${restaurant.name || 'Restoran'}`,
+      html: confirmedHtml(booking, restaurant),
+      label: 'booking confirmed',
+    });
+  } catch (e) {
+    logFail('booking confirmed', e);
+    throw e;
+  }
+}
+
+// Fire-and-forget wrapper used by POST /api/bookings. Never throws.
+// Sends the "received" email to the guest + a "Nova rezervacija" to admin.
 async function sendBookingEmails({ booking, restaurant }) {
-  try { await sendGuestConfirmation({ booking, restaurant }); } catch (_) {}
+  try { await sendBookingReceivedEmail({ booking, restaurant }); } catch (_) {}
   try { await sendAdminNotification({ booking, restaurant }); } catch (_) {}
 }
 
@@ -156,14 +259,8 @@ async function sendTestEmail() {
     e.code = 'NO_API_KEY';
     throw e;
   }
-  const adminTo = process.env.ADMIN_EMAIL;
-  if (!adminTo) {
-    const e = new Error('ADMIN_EMAIL not set');
-    e.code = 'NO_ADMIN_EMAIL';
-    throw e;
-  }
   return _send({
-    to: adminTo,
+    to: sandboxRecipient(process.env.ADMIN_EMAIL),
     subject: 'Test email – Booking sistem radi!',
     html: '<h2>Test email uspješno poslan!</h2><p>Booking sistem je ispravno konfigurisan.</p>',
     label: 'test email',
@@ -173,8 +270,11 @@ async function sendTestEmail() {
 module.exports = {
   envConfigured,
   logEnvSummary,
+  sandboxRecipient,
   sendGuestConfirmation,
   sendAdminNotification,
+  sendBookingReceivedEmail,
+  sendBookingConfirmedEmail,
   sendBookingEmails,
   sendTestEmail,
 };

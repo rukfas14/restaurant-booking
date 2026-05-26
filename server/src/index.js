@@ -8,6 +8,7 @@ const { requireAuth, loginHandler } = require('./auth');
 const { getAvailableSlots, canBook, getRestaurant } = require('./slots');
 const {
   sendBookingEmails,
+  sendBookingConfirmedEmail,
   sendTestEmail,
   envConfigured,
   logEnvSummary,
@@ -178,10 +179,13 @@ app.patch('/api/bookings/:id', requireAuth, (req, res) => {
     .get(id, req.user.restaurant_id);
   if (!existing) return res.status(404).json({ error: 'not_found' });
 
+  let confirmTransition = false;
   if (body.status !== undefined) {
     if (!VALID_STATUSES.includes(String(body.status))) {
       return res.status(400).json({ error: 'invalid_status' });
     }
+    confirmTransition =
+      existing.status !== 'confirmed' && String(body.status) === 'confirmed';
     db.prepare('UPDATE bookings SET status = ? WHERE id = ?').run(
       String(body.status),
       id,
@@ -193,7 +197,19 @@ app.patch('/api/bookings/:id', requireAuth, (req, res) => {
       id,
     );
   }
-  res.json(db.prepare('SELECT * FROM bookings WHERE id = ?').get(id));
+  const updated = db.prepare('SELECT * FROM bookings WHERE id = ?').get(id);
+
+  if (confirmTransition) {
+    const restaurant = getRestaurant(updated.restaurant_id);
+    // Fire-and-forget — don't block the dashboard response on the email API.
+    Promise.resolve()
+      .then(() => sendBookingConfirmedEmail({ booking: updated, restaurant }))
+      .catch((e) =>
+        console.error('[email] confirmed email failed:', e.message),
+      );
+  }
+
+  res.json(updated);
 });
 
 // --- public: email test ---------------------------------------------------
