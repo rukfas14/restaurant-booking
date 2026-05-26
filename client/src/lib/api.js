@@ -1,3 +1,17 @@
+// API base resolves at BUILD time from VITE_API_URL.
+// Falls back to the Railway URL so the dashboard works even if the
+// env var isn't set on Vercel.
+const API_BASE = (
+  import.meta.env.VITE_API_URL ||
+  'https://restaurant-booking-production-e5ce.up.railway.app'
+).replace(/\/+$/, '');
+
+// Logged once so you can verify in DevTools which host the build is calling.
+if (typeof window !== 'undefined') {
+  // eslint-disable-next-line no-console
+  console.log('[api] base =', API_BASE);
+}
+
 const TOKEN_KEY = 'rb_token';
 const USER_KEY = 'rb_user';
 
@@ -27,7 +41,7 @@ async function request(path, opts = {}) {
     ...(opts.headers || {}),
   };
   if (token) headers.Authorization = `Bearer ${token}`;
-  const res = await fetch(path, { ...opts, headers });
+  const res = await fetch(API_BASE + path, { ...opts, headers });
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
     const err = new Error(body.error || 'request_failed');
